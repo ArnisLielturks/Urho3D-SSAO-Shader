@@ -5,19 +5,12 @@
 #include "PostProcess.glsl"
 
 varying vec2 vTexCoord;
-varying vec2 vScreenPos;
-varying vec4 vWorldPos;
 varying float vDepth;
 
 #ifdef COMPILEPS
 uniform vec2 cSSAOHInvSize;
 uniform vec2 cBlurHInvSize;
 uniform vec2 cBlurVInvSize;
-uniform float cSSAOStrength;
-uniform float cSSAOArea;
-uniform float cSSAOFalloff;
-uniform float cSSAONoiseFactor;
-uniform float cSSAORadius;
 #endif
 
 void VS()
@@ -26,8 +19,6 @@ void VS()
     vec3 worldPos = GetWorldPos(modelMatrix);
     gl_Position = GetClipPos(worldPos);
     vTexCoord = GetQuadTexCoord(gl_Position);
-    vScreenPos = GetScreenPosPreDiv(gl_Position);
-    vWorldPos = vec4(worldPos, GetDepth(gl_Position));
 }
 
 #ifdef COMPILEPS
@@ -38,8 +29,8 @@ float AbsoluteDepth(float normalDepth) {
 }
 
 vec3 normal_from_depth(float depth, vec2 texcoords) {
-    const vec2 offset1 = vec2(2.0, 0.0);
-    const vec2 offset2 = vec2(0.0, 2.0);
+    const vec2 offset1 = vec2(0.0, 1.0);
+    const vec2 offset2 = vec2(1.0, 0.0);
 
     float depth1 = AbsoluteDepth(DecodeDepth(texture2D(sDepthBuffer, vTexCoord.xy + offset1 * cSSAOHInvSize.x).rgb));
     float depth2 = AbsoluteDepth(DecodeDepth(texture2D(sDepthBuffer, vTexCoord.xy + offset2 * cSSAOHInvSize.y).rgb));
@@ -65,11 +56,16 @@ vec3 saturateVec3(vec3 value) {
 void PS()
 {
     float originalDepth = AbsoluteDepth(DecodeDepth(texture2D(sDepthBuffer, vTexCoord).rgb));
-//    gl_FragColor = vec4(texture2D(sDepthBuffer, vTexCoord).rgb, 1.0);
-//    return;
 
 #ifdef OCCLUDE
+
+    const float total_strength = 1.0;
     const float base = 0.2;
+
+    const float area = 0.75;
+    const float falloff = 0.001;
+    const float noiseFactor = 7.0;
+    const float radius = 0.2;
 
     const int samples = 16;
     vec3 sample_sphere[samples] = vec3[samples](
@@ -83,12 +79,12 @@ void PS()
         vec3( 0.0352,-0.0631, 0.5460), vec3(-0.4776, 0.2847,-0.0271)
     );
 
-    vec3 random = normalize(texture2D(sDiffMap, vTexCoord * cSSAONoiseFactor).rgb);
+    vec3 random = normalize(texture2D(sDiffMap, vTexCoord * noiseFactor).rgb);
 
     vec3 position = vec3(vTexCoord, 0.0);
     vec3 normal = normal_from_depth(originalDepth, vTexCoord);
 
-    float radius_depth = cSSAORadius    ;
+    float radius_depth = radius / originalDepth;
     float occlusion = 0.0;
 
     for (int i = 0; i < samples; i++) {
@@ -96,19 +92,18 @@ void PS()
         vec3 hemi_ray = position + sign(dot(ray,normal)) * ray;
 
         float occ_depth = AbsoluteDepth(DecodeDepth(texture2D(sDepthBuffer, hemi_ray.xy).rgb));
-        float difference = (originalDepth - occ_depth) / (cFarClipPS - cNearClipPS);
+        float difference = originalDepth - occ_depth;
 
-        occlusion += step(cSSAOFalloff, difference) * (1.0 - smoothstep(cSSAOFalloff, cSSAOArea, difference));
+        occlusion += step(falloff, difference) * (1.0 - smoothstep(falloff, area, difference));
     }
 
-    float ao = 1.0 - cSSAOStrength * occlusion * (1.0 / samples);
+    float ao = 1.0 - total_strength * occlusion * (1.0 / samples);
 
     gl_FragColor.r = clamp(ao + base, 0.0, 1.0);
     gl_FragColor.g = gl_FragColor.r;
     gl_FragColor.b = gl_FragColor.r;
 #endif
 
-#if defined(BLURV) || defined(BLURH)
     const int blurRadius = 16;
     float blurWeights[16] = float[16](
         100, 95, 90, 85,
@@ -124,6 +119,7 @@ void PS()
     // Depth check to avoid bluring out the area around the objects
     float maxDepth = 0.2 * originalDepth;
 
+#if defined(BLURV) || defined(BLURH)
     vec2 offset = vec2(0.0, 1.0) * cBlurVInvSize.y;
     float up = AbsoluteDepth(DecodeDepth(texture2D(sDepthBuffer, vTexCoord + offset).rgb));
     float down = AbsoluteDepth(DecodeDepth(texture2D(sDepthBuffer, vTexCoord - offset).rgb));
@@ -172,24 +168,6 @@ void PS()
 #endif
 
 #ifdef OUTPUT
-    if (vTexCoord.y < 0.3) {
-        gl_FragColor.rgb = texture2D(sDepthBuffer, vTexCoord).rgb;
-    } else {
-        if (vTexCoord.x <= 0.33) {
-            gl_FragColor.rgb = texture2D(sDiffMap, vTexCoord).rgb * texture2D(sDepthBuffer, vTexCoord).rgb;
-        } else if (vTexCoord.x >= 0.66) {
-            gl_FragColor.rgb = texture2D(sDiffMap, vTexCoord).rgb;
-        } else {
-            float pos = 0.33  * (0.5 + 0.5 * sin(cElapsedTimePS));
-            pos += 0.33;
-            gl_FragColor = vec4(1);
-            if (vTexCoord.x >= pos) {
-                gl_FragColor.rgb = texture2D(sDiffMap, vTexCoord).rgb;
-            } else {
-                gl_FragColor.rgb = texture2D(sDiffMap, vTexCoord).rgb * texture2D(sDepthBuffer, vTexCoord).rgb;
-            }
-        }
-    }
+    gl_FragColor.rgb = texture2D(sDiffMap, vTexCoord).rgb * texture2D(sDepthBuffer, vTexCoord).rgb;
 #endif
-
 }

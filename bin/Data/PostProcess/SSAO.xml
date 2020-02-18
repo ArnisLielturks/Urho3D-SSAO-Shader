@@ -7,11 +7,6 @@
     <command type="clear" color="1 1 1 1" depth="1.0" stencil="0" output="ssao" />
     <command type="scenepass" pass="depth" output="depth" />
     <command type="quad" tag="SSAO" vs="SSAO" ps="SSAO" psdefines="OCCLUDE" output="SSAO">
-        <parameter name="SSAOStrength" value="1.0" />
-        <parameter name="SSAOArea" value="1.75" />
-        <parameter name="SSAOFalloff" value="0.001" />
-        <parameter name="SSAONoiseFactor" value="7.0" />
-        <parameter name="SSAORadius" value="0.01" />
         <texture unit="diffuse" name="Textures/Noise.png" />
         <texture unit="depth" name="depth" />
     </command>
