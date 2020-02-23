@@ -116,22 +116,24 @@ void StaticScene::CreateScene()
     // see the model get simpler as it moves further away). Finally, rendering a large number of the same object with the
     // same material allows instancing to be used, if the GPU supports it. This reduces the amount of CPU work in rendering the
     // scene.
-    const unsigned NUM_OBJECTS = 200;
-    for (unsigned i = 0; i < NUM_OBJECTS; ++i)
-    {
-        Node* mushroomNode = scene_->CreateChild("Mushroom");
-        mushroomNode->SetPosition(Vector3(i, 1.5f, 0));
+    for (int i = -5; i < 5; ++i) {
+        for (int j = -5; j < 5; ++j) {
+
+            Node *mushroomNode = scene_->CreateChild("Mushroom");
+            mushroomNode->SetPosition(Vector3(i * 7, 1.5f, j * 7));
 //        mushroomNode->SetRotation(Quaternion(0.0f, Random(360.0f), 0.0f));
-        mushroomNode->SetScale(3.0f + Random(2.0f));
-        auto* mushroomObject = mushroomNode->CreateComponent<StaticModel>();
-        mushroomObject->SetModel(cache->GetResource<Model>("Models/Box.mdl"));
-        mushroomObject->SetMaterial(cache->GetResource<Material>("Materials/Prototype.xml"));
+            mushroomNode->SetScale(2.0f + Random(2.0f));
+            auto *mushroomObject = mushroomNode->CreateComponent<StaticModel>();
+            mushroomObject->SetModel(cache->GetResource<Model>("Models/Box.mdl"));
+            mushroomObject->SetMaterial(cache->GetResource<Material>("Materials/Prototype.xml"));
+        }
     }
 
     // Create a scene node for the camera, which we will move around
     // The camera will use default settings (1000 far clip distance, 45 degrees FOV, set aspect ratio automatically)
     cameraNode_ = scene_->CreateChild("Camera");
-    cameraNode_->CreateComponent<Camera>();
+    Camera* camera = cameraNode_->CreateComponent<Camera>();
+
 
     // Set an initial position for the camera scene node above the plane
     cameraNode_->SetPosition(Vector3(0.0f, 5.0f, 0.0f));
@@ -240,12 +242,11 @@ void StaticScene::SetupViewport()
     // at minimum. Additionally we could configure the viewport screen size and the rendering path (eg. forward / deferred) to
     // use, but now we just use full screen and default render path configured in the engine command line options
     SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
+    viewport->SetRenderPath(cache->GetResource<XMLFile>("RenderPaths/ForwardDepth.xml"));
     SharedPtr<RenderPath> effectRenderPath = viewport->GetRenderPath()->Clone();
     effectRenderPath->Append(cache->GetResource<XMLFile>("PostProcess/SSAO.xml"));
     effectRenderPath->SetEnabled("SSAO", true);
 
-//    effectRenderPath->Append(cache->GetResource<XMLFile>("PostProcess/Bloom.xml"));
-//    effectRenderPath->SetEnabled("Bloom", true);
     viewport->SetRenderPath(effectRenderPath);
     renderer->SetViewport(0, viewport);
 }
