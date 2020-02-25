@@ -187,6 +187,20 @@ void StaticScene::CreateInstructions()
         instructionText->SetPosition(-50, 50);
     }
 
+    {
+        // Construct new Text object, set string to display and font to use
+        auto *instructionText = ui->GetRoot()->CreateChild<Text>();
+        instructionText->SetText("Press TAB to display SSAO settings");
+        instructionText->SetFont(cache->GetResource<Font>("Fonts/Anonymous Pro.ttf"), 15);
+        instructionText->SetColor(Color::GREEN);
+        instructionText->SetTextEffect(TextEffect::TE_SHADOW);
+
+        // Position the text relative to the screen center
+        instructionText->SetHorizontalAlignment(HA_CENTER);
+        instructionText->SetVerticalAlignment(VA_TOP);
+        instructionText->SetPosition(0, 50);
+    }
+
     window_ = ui->GetRoot()->CreateChild<Window>();
     window_->SetHorizontalAlignment(HA_LEFT);
     window_->SetVerticalAlignment(VA_CENTER);
@@ -329,6 +343,7 @@ Slider* StaticScene::CreateSlider(const String& text, float value, float range)
     root->SetFixedWidth(window_->GetWidth());
     root->SetLayoutMode(LM_VERTICAL);
     root->SetLayoutSpacing(20);
+    root->SetLayoutBorder(IntRect(4, 4, 4, 4));
     auto* cache = GetSubsystem<ResourceCache>();
     auto* font = cache->GetResource<Font>("Fonts/Anonymous Pro.ttf");
 

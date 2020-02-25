@@ -11,5 +11,5 @@ viewport->SetRenderPath(cache->GetResource<XMLFile>("RenderPaths/ForwardDepth.xm
 # Setup
 Copy contents in the Urho3D source directory and build the engine as usual.
 
-### Preview with strong SSAO settings
+### Preview
 ![alt tag](https://github.com/ArnisLielturks/Urho3D-SSAO-Shader/blob/master/Screenshots/preview.png)
