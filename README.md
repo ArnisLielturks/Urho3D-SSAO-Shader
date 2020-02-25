@@ -1,4 +1,4 @@
-# Urho3D SSAO shader
+# Urho3D Pure Depth SSAO shader
 
 Implementation based on [this article](http://theorangeduck.com/page/pure-depth-ssao)
 
