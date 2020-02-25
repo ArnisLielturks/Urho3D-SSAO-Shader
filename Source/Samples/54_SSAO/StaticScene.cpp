@@ -204,6 +204,13 @@ void StaticScene::CreateInstructions()
         GetSubsystem<Renderer>()->GetViewport(0)->GetRenderPath()->SetShaderParameter("SSAOStrength", value);
     });
 
+    auto baseSlider = CreateSlider("Base", 1.0, 5.0);
+    SubscribeToEvent(baseSlider, E_SLIDERCHANGED, [&](StringHash eventType, VariantMap& eventData) {
+        using namespace SliderChanged;
+        float value = eventData[P_VALUE].GetFloat();
+        GetSubsystem<Renderer>()->GetViewport(0)->GetRenderPath()->SetShaderParameter("SSAOBase", value);
+    });
+
     auto areaSlider = CreateSlider("Area", 1.75, 3.0);
     SubscribeToEvent(areaSlider, E_SLIDERCHANGED, [&](StringHash eventType, VariantMap& eventData) {
         using namespace SliderChanged;
